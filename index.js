@@ -17,7 +17,7 @@ async function run() {
     // Query for a movie that has the title 'Back to the Future'
 
     app.get("/phones", async (req, res) => {
-      const result = await phoneCollection.find().sort({_id: -1}).limit(3).toArray();
+      const result = await phoneCollection.find().sort({_id: -1}).limit(8).toArray();
       res.send(result)
     });
     app.post("/users", async (req, res) => {
