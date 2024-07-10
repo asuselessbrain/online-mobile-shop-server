@@ -12,22 +12,22 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 const client = new MongoClient(uri);
 async function run() {
   try {
-    const user = client.db("bestroBoss").collection("users");
     const usersCollection = client.db("astraGadgets").collection("users");
+    const phoneCollection = client.db("astraGadgets").collection("phones");
     // Query for a movie that has the title 'Back to the Future'
 
-    app.get("/user", async (req, res) => {
-      const result = await user.find().toArray();
-      res.send(result);
+    app.get("/phones", async (req, res) => {
+      const result = await phoneCollection.find().sort({_id: -1}).limit(3).toArray();
+      res.send(result)
     });
     app.post("/users", async (req, res) => {
       const user = req.body;
 
       const query = { email: user.email };
-      const existingUser = await usersCollection.findOne(query)
+      const existingUser = await usersCollection.findOne(query);
 
-      if(existingUser){
-        return res.send({message: "User is exist", insertedId: null})
+      if (existingUser) {
+        return res.send({ message: "User is exist", insertedId: null });
       }
       const result = await usersCollection.insertOne(user);
       res.send(result);
