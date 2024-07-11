@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -16,10 +16,22 @@ async function run() {
     const phoneCollection = client.db("astraGadgets").collection("phones");
     // Query for a movie that has the title 'Back to the Future'
 
+    // get latest phone
     app.get("/phones", async (req, res) => {
       const result = await phoneCollection.find().sort({_id: -1}).limit(8).toArray();
       res.send(result)
     });
+
+    // get phone details
+
+    app.get("/phone/:id", async(req, res) => {
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
+      const result = await phoneCollection.findOne(query)
+      res.send(result)
+    })
+
+    // set user in database
     app.post("/users", async (req, res) => {
       const user = req.body;
 
