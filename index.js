@@ -24,7 +24,7 @@ async function run() {
 
     // get phone details
 
-    app.get("/phone/:id", async(req, res) => {
+    app.get("/phone-details/:id", async(req, res) => {
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
       const result = await phoneCollection.findOne(query)
