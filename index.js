@@ -17,8 +17,13 @@ async function run() {
     // Query for a movie that has the title 'Back to the Future'
 
     // get latest phone
-    app.get("/phones", async (req, res) => {
+    app.get("/latest-phones", async (req, res) => {
       const result = await phoneCollection.find().sort({_id: -1}).limit(8).toArray();
+      res.send(result)
+    });
+
+    app.get("/all-phones", async (req, res) => {
+      const result = await phoneCollection.find().sort({_id: -1}).toArray();
       res.send(result)
     });
 
