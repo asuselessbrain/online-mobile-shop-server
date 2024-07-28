@@ -18,23 +18,30 @@ async function run() {
 
     // get latest phone
     app.get("/latest-phones", async (req, res) => {
-      const result = await phoneCollection.find().sort({_id: -1}).limit(8).toArray();
-      res.send(result)
+      const result = await phoneCollection
+        .find()
+        .sort({ _id: -1 })
+        .limit(8)
+        .toArray();
+      res.send(result);
     });
 
     app.get("/all-phones", async (req, res) => {
-      const result = await phoneCollection.find().sort({_id: -1}).toArray();
-      res.send(result)
+      const brand = req.query.brand;
+      let query = {};
+      if (brand && brand !== 'null') query = { brand };
+      const result = await phoneCollection.find(query).sort({ _id: -1 }).toArray();
+      res.send(result);
     });
 
     // get phone details
 
-    app.get("/phone-details/:id", async(req, res) => {
-      const id = req.params.id
-      const query = {_id: new ObjectId(id)}
-      const result = await phoneCollection.findOne(query)
-      res.send(result)
-    })
+    app.get("/phone-details/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await phoneCollection.findOne(query);
+      res.send(result);
+    });
 
     // set user in database
     app.post("/users", async (req, res) => {
