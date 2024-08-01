@@ -8,7 +8,8 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
 const client = new MongoClient(uri);
 async function run() {
   try {
@@ -42,6 +43,22 @@ async function run() {
       const result = await phoneCollection.findOne(query);
       res.send(result);
     });
+
+    // post phone details in database
+
+    app.post('/upload-phone-details', async(req, res) =>{
+      const phoneDetails = req.body;
+      console.log(phoneDetails)
+      const result = await phoneCollection.insertOne(phoneDetails)
+      res.send(result)
+    })
+
+    // app.get('/my-added-phone', async(req, res) =>{
+    //   const phoneDetails = req.body;
+    //   console.log(phoneDetails)
+    //   const result = await phoneCollection.insertOne(phoneDetails)
+    //   res.send(result)
+    // })
 
     // set user in database
     app.post("/users", async (req, res) => {
