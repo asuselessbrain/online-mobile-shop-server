@@ -8,7 +8,8 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
 // const uri = 'mongodb://localhost:27017';
 const client = new MongoClient(uri);
 async function run() {
@@ -55,6 +56,8 @@ async function run() {
       res.send(result);
     });
 
+    // display my added phone related api
+
     app.get("/my-added-phone/:email", async (req, res) => {
       const email = req.params.email;
       const query = { "hostInfo.host_email": email };
@@ -64,6 +67,15 @@ async function run() {
         .toArray();
       res.send(result);
     });
+
+    // delete my added phone related api
+
+    app.delete("/delete-my-added-phone/:id", async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await phoneCollection.deleteOne(query)
+      res.send(result)
+    })
 
     // set user in database
     app.post("/users", async (req, res) => {
