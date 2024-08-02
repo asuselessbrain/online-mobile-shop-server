@@ -56,6 +56,24 @@ async function run() {
       res.send(result);
     });
 
+    // update phone details in database
+
+    app.put("/update-phone-details/:id", async(req,res)=>{
+      const product = req.body
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
+
+      const updateDoc = {
+        $set: {
+          ...product
+        },
+      };
+
+      const result = await phoneCollection.updateOne(query, updateDoc)
+
+      res.send(result)
+    })
+
     // display my added phone related api
 
     app.get("/my-added-phone/:email", async (req, res) => {
