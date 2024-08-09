@@ -4,21 +4,75 @@ require("dotenv").config();
 const { MongoClient, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
+const jwt = require("jsonwebtoken");
+const cookieParser = require('cookie-parser')
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser())
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+const verifyToken = async (req, res, next) => {
+  const token = req.cookies?.token;
+  if(!token){
+    return res.status(401).send({message: "unauthorized access"})
+  }
+  try{
+    jwt.verify(token, process.env.Access_Token, (err, decoded) => {
+      if(err){
+        res.status(401).send({message: "Invalid Token"})
+      }
+      req.user = decoded;
+      console.log(req.user)
+    })
+  }
+  catch(err){
+    console.log(err.message)
+  }
+  next();
+};
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // const uri = 'mongodb://localhost:27017';
 const client = new MongoClient(uri);
 async function run() {
   try {
     const usersCollection = client.db("astraGadgets").collection("users");
     const phoneCollection = client.db("astraGadgets").collection("phones");
-    // Query for a movie that has the title 'Back to the Future'
+
+    // jwt related api
+
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.Access_Token, {
+        expiresIn: "1h",
+      });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "none",
+        })
+        .send({ success: true });
+    });
+
+    // Logout
+    app.get("/logout", async (req, res) => {
+      res
+        .clearCookie("token", {
+          maxAge: 0,
+          secure: false,
+          sameSite: "none",
+        })
+        .send({ success: true });
+    });
 
     // get latest phone
-    app.get("/latest-phones", async (req, res) => {
+    app.get("/latest-phones", verifyToken, async (req, res) => {
       const result = await phoneCollection
         .find()
         .sort({ _id: -1 })
@@ -57,21 +111,21 @@ async function run() {
 
     // update phone details in database
 
-    app.put("/update-phone-details/:id", async(req,res)=>{
-      const product = req.body
-      const id = req.params.id
-      const query = {_id: new ObjectId(id)}
+    app.put("/update-phone-details/:id", async (req, res) => {
+      const product = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
 
       const updateDoc = {
         $set: {
-          ...product
+          ...product,
         },
       };
 
-      const result = await phoneCollection.updateOne(query, updateDoc)
+      const result = await phoneCollection.updateOne(query, updateDoc);
 
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // display my added phone related api
 
@@ -87,12 +141,12 @@ async function run() {
 
     // delete my added phone related api
 
-    app.delete("/delete-my-added-phone/:id", async(req, res)=>{
+    app.delete("/delete-my-added-phone/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
-      const result = await phoneCollection.deleteOne(query)
-      res.send(result)
-    })
+      const query = { _id: new ObjectId(id) };
+      const result = await phoneCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // set user in database
     app.post("/users", async (req, res) => {
@@ -110,12 +164,12 @@ async function run() {
 
     // check user role
 
-    app.get("/user-role/:email", async(req,res) => {
+    app.get("/user-role/:email", async (req, res) => {
       const email = req.params.email;
-      const query = {email: email}
+      const query = { email: email };
       const result = await usersCollection.findOne(query);
-      res.send(result)
-    })
+      res.send(result);
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
