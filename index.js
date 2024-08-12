@@ -43,6 +43,7 @@ async function run() {
   try {
     const usersCollection = client.db("astraGadgets").collection("users");
     const phoneCollection = client.db("astraGadgets").collection("phones");
+    const cartCollection = client.db("astraGadgets").collection("carts");
 
     // jwt related api
 
@@ -72,7 +73,7 @@ async function run() {
     });
 
     // get latest phone
-    app.get("/latest-phones", verifyToken, async (req, res) => {
+    app.get("/latest-phones", async (req, res) => {
       const result = await phoneCollection
         .find()
         .sort({ _id: -1 })
@@ -161,6 +162,12 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+
+    app.post('/my-cart', async(req, res) =>{
+      const myCartProduct = req.body;
+      const result = await cartCollection.insertOne(myCartProduct)
+      res.send(result)
+    })
 
     // check user role
 
