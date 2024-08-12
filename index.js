@@ -5,7 +5,7 @@ const { MongoClient, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 const jwt = require("jsonwebtoken");
-const cookieParser = require('cookie-parser')
+const cookieParser = require("cookie-parser");
 
 app.use(
   cors({
@@ -14,24 +14,23 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
-  if(!token){
-    return res.status(401).send({message: "unauthorized access"})
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
   }
-  try{
+  try {
     jwt.verify(token, process.env.Access_Token, (err, decoded) => {
-      if(err){
-        res.status(401).send({message: "Invalid Token"})
+      if (err) {
+        res.status(401).send({ message: "Invalid Token" });
       }
       req.user = decoded;
-      console.log(req.user)
-    })
-  }
-  catch(err){
-    console.log(err.message)
+      console.log(req.user);
+    });
+  } catch (err) {
+    console.log(err.message);
   }
   next();
 };
@@ -163,11 +162,40 @@ async function run() {
       res.send(result);
     });
 
-    app.post('/my-cart', async(req, res) =>{
+    // product add to cart related api
+    app.post("/my-cart", async (req, res) => {
       const myCartProduct = req.body;
-      const result = await cartCollection.insertOne(myCartProduct)
-      res.send(result)
-    })
+      const result = await cartCollection.insertOne(myCartProduct);
+      res.send(result);
+    });
+
+    // get cart item data related api
+
+    app.get("/my-order/:email", async (req, res) => {
+      const email = req.params.email;
+
+      const result = await cartCollection
+        .aggregate([
+          {
+            $match: { "userInfo.email": email },
+          },
+          {
+            $addFields: {
+              productIdObjectId: { $toObjectId: "$productId" },
+            },
+          },
+          {
+            $lookup: {
+              from: "phones",
+              localField: "productIdObjectId",
+              foreignField: "_id",
+              as: "productDetails",
+            },
+          },
+        ])
+        .toArray();
+      res.send(result);
+    });
 
     // check user role
 
