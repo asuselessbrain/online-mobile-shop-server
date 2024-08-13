@@ -9,7 +9,7 @@ const cookieParser = require("cookie-parser");
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://astra-gadgets-server.vercel.app", "https://astra-gadgets.netlify.app/"],
+    origin: ["http://localhost:5173", "https://astra-gadgets.netlify.app"],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   })
