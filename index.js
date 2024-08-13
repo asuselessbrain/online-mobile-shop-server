@@ -54,7 +54,7 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: false,
+          secure: true,
           sameSite: "none",
         })
         .send({ success: true });
@@ -65,7 +65,8 @@ async function run() {
       res
         .clearCookie("token", {
           maxAge: 0,
-          secure: false,
+          secure: true,
+          httpOnly:true,
           sameSite: "none",
         })
         .send({ success: true });
