@@ -10,6 +10,7 @@ const cookieParser = require("cookie-parser");
 app.use(
   cors({
     origin: ["http://localhost:5173", "https://astra-gadgets-server.vercel.app"],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   })
 );
