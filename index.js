@@ -192,6 +192,19 @@ async function run() {
               as: "productDetails",
             },
           },
+          {
+            $addFields:{
+              orderDetails: {
+                $first: "$productDetails"
+              }
+            }
+          },
+          {
+            $project:{
+              productDetails: 0,
+              productIdObjectId: 0
+            }
+          }
         ])
         .toArray();
       res.send(result);
