@@ -210,6 +210,16 @@ async function run() {
       res.send(result);
     });
 
+    // delete item from my-cart
+
+    app.delete('/delete-item-from-my-cart/:id', async(req, res) =>{
+      const id = req.params.id;
+
+      const query = {_id: new ObjectId(id)}
+      const result = await cartCollection.deleteOne(query)
+      res.send(result)
+    })
+
     // check user role
 
     app.get("/user-role/:email", async (req, res) => {
