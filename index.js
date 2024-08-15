@@ -27,14 +27,29 @@ const verifyToken = async (req, res, next) => {
       if (err) {
         res.status(401).send({ message: "Invalid Token" });
       }
-      req.user = decoded;
-      console.log(req.user);
+      req.decoded = decoded;
+      console.log(req.decoded);
     });
   } catch (err) {
     console.log(err.message);
   }
   next();
 };
+
+const verifyAdmin = async(req, res, next) =>{ 
+  const email = req.decoded.email
+  
+  const query = {email: email}
+
+  const user = await usersCollection.findOne(query)
+
+  const isAdmin = user?.role === 'admin'
+  if(!isAdmin){
+    return res.status(403).send({message: "Forbidden ACCESS"})
+  }
+
+  next()
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // const uri = 'mongodb://localhost:27017';
@@ -55,8 +70,8 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: true,
-          sameSite: "none",
+          secure: false,
+          sameSite: "None",
         })
         .send({ success: true });
     });
@@ -66,9 +81,9 @@ async function run() {
       res
         .clearCookie("token", {
           maxAge: 0,
-          secure: true,
+          secure: false,
           httpOnly:true,
-          sameSite: "none",
+          sameSite: "None",
         })
         .send({ success: true });
     });
@@ -96,7 +111,7 @@ async function run() {
 
     // get phone details
 
-    app.get("/phone-details/:id", async (req, res) => {
+    app.get("/phone-details/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await phoneCollection.findOne(query);
@@ -105,7 +120,7 @@ async function run() {
 
     // post phone details in database
 
-    app.post("/upload-phone-details", async (req, res) => {
+    app.post("/upload-phone-details", verifyToken, async (req, res) => {
       const phoneDetails = req.body;
       const result = await phoneCollection.insertOne(phoneDetails);
       res.send(result);
@@ -113,7 +128,7 @@ async function run() {
 
     // update phone details in database
 
-    app.put("/update-phone-details/:id", async (req, res) => {
+    app.put("/update-phone-details/:id", verifyToken, async (req, res) => {
       const product = req.body;
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -131,7 +146,7 @@ async function run() {
 
     // display my added phone related api
 
-    app.get("/my-added-phone/:email", async (req, res) => {
+    app.get("/my-added-phone/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { "hostInfo.host_email": email };
       const result = await phoneCollection
@@ -143,7 +158,7 @@ async function run() {
 
     // delete my added phone related api
 
-    app.delete("/delete-my-added-phone/:id", async (req, res) => {
+    app.delete("/delete-my-added-phone/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await phoneCollection.deleteOne(query);
@@ -151,7 +166,7 @@ async function run() {
     });
 
     // set user in database
-    app.post("/users", async (req, res) => {
+    app.post("/users", verifyToken, async (req, res) => {
       const user = req.body;
 
       const query = { email: user.email };
@@ -165,7 +180,7 @@ async function run() {
     });
 
     // product add to cart related api
-    app.post("/my-cart", async (req, res) => {
+    app.post("/my-cart", verifyToken, async (req, res) => {
       const myCartProduct = req.body;
       const result = await cartCollection.insertOne(myCartProduct);
       res.send(result);
@@ -173,7 +188,7 @@ async function run() {
 
     // get cart item data related api
 
-    app.get("/my-order/:email", async (req, res) => {
+    app.get("/my-order/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
 
       const result = await cartCollection
@@ -214,13 +229,14 @@ async function run() {
 
     // delete item from my-cart
 
-    app.delete('/delete-item-from-my-cart/:id', async(req, res) =>{
+    app.delete('/delete-item-from-my-cart/:id', verifyToken, async(req, res) =>{
       const id = req.params.id;
 
       const query = {_id: new ObjectId(id)}
       const result = await cartCollection.deleteOne(query)
       res.send(result)
     })
+
 
     // check user role
 
