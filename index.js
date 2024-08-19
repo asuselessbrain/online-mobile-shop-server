@@ -246,6 +246,13 @@ async function run() {
       const result = await usersCollection.findOne(query);
       res.send(result);
     });
+
+    // get all users data
+
+    app.get("/users" , async(req, res) => {
+      const result = await usersCollection.find().toArray()
+      res.send(result)
+    })
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
