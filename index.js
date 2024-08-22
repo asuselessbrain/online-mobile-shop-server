@@ -9,7 +9,7 @@ const cookieParser = require("cookie-parser");
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://astra-gadgets.netlify.app"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://astra-gadgets.netlify.app"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -17,39 +17,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
-  if (!token) {
-    return res.status(401).send({ message: "unauthorized access" });
-  }
-  try {
-    jwt.verify(token, process.env.Access_Token, (err, decoded) => {
-      if (err) {
-        res.status(401).send({ message: "Invalid Token" });
-      }
-      req.decoded = decoded;
-      console.log(req.decoded);
-    });
-  } catch (err) {
-    console.log(err.message);
-  }
-  next();
-};
 
-const verifyAdmin = async (req, res, next) => {
-  const email = req.decoded.email;
-
-  const query = { email: email };
-
-  const user = await usersCollection.findOne(query);
-
-  const isAdmin = user?.role === "admin";
-  if (!isAdmin) {
-    return res.status(403).send({ message: "Forbidden ACCESS" });
-  }
-
-  next();
-};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // const uri = 'mongodb://localhost:27017';
@@ -59,6 +27,40 @@ async function run() {
     const usersCollection = client.db("astraGadgets").collection("users");
     const phoneCollection = client.db("astraGadgets").collection("phones");
     const cartCollection = client.db("astraGadgets").collection("carts");
+
+    const verifyToken = async (req, res, next) => {
+      const token = req.cookies?.token;
+      if (!token) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+      try {
+        jwt.verify(token, process.env.Access_Token, (err, decoded) => {
+          if (err) {
+            res.status(401).send({ message: "Invalid Token" });
+          }
+          req.decoded = decoded;
+          console.log(req.decoded)
+        });
+      } catch (err) {
+        console.log(err.message);
+      }
+      next();
+    };
+
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+    
+      const query = { email: email };
+    
+      const user = await usersCollection.findOne(query);
+    
+      const isAdmin = user?.role === "admin";
+      if (!isAdmin) {
+        return res.status(403).send({ message: "Forbidden ACCESS" });
+      }
+    
+      next();
+    };
 
     // jwt related api
 
@@ -166,7 +168,7 @@ async function run() {
     });
 
     // set user in database
-    app.post("/users", verifyToken, async (req, res) => {
+    app.post("/users", async (req, res) => {
       const user = req.body;
 
       const query = { email: user.email };
@@ -252,7 +254,7 @@ async function run() {
 
     // get all users data
 
-    app.get("/users", async (req, res) => {
+    app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
