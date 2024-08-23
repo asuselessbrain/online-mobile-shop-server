@@ -9,15 +9,17 @@ const cookieParser = require("cookie-parser");
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "https://astra-gadgets.netlify.app"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://astra-gadgets.netlify.app",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
 );
 app.use(express.json());
 app.use(cookieParser());
-
-
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x6ipdw6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // const uri = 'mongodb://localhost:27017';
@@ -39,7 +41,7 @@ async function run() {
             res.status(401).send({ message: "Invalid Token" });
           }
           req.decoded = decoded;
-          console.log(req.decoded)
+          console.log(req.decoded);
         });
       } catch (err) {
         console.log(err.message);
@@ -49,16 +51,16 @@ async function run() {
 
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-    
+
       const query = { email: email };
-    
+
       const user = await usersCollection.findOne(query);
-    
+
       const isAdmin = user?.role === "admin";
       if (!isAdmin) {
         return res.status(403).send({ message: "Forbidden ACCESS" });
       }
-    
+
       next();
     };
 
@@ -72,8 +74,8 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
     });
@@ -84,8 +86,8 @@ async function run() {
         .clearCookie("token", {
           maxAge: 0,
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
     });
@@ -258,6 +260,25 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+
+    // update user role
+    app.patch(
+      "/users/role/:email",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.params.email;
+        const userRole = req.body;
+        const query = { email: email };
+        const updateDoc = {
+          $set: {
+            ...userRole,
+          },
+        };
+        const result = await usersCollection.updateOne(query, updateDoc);
+        res.send(result);
+      }
+    );
     // delete user from database
 
     app.delete("/delete-user/:id", async (req, res) => {
