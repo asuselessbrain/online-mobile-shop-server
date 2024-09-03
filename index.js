@@ -41,7 +41,6 @@ async function run() {
             res.status(401).send({ message: "Invalid Token" });
           }
           req.decoded = decoded;
-          console.log(req.decoded);
         });
       } catch (err) {
         console.log(err.message);
@@ -190,45 +189,65 @@ async function run() {
       res.send(result);
     });
 
+    // verify product is stored in database or not
+
+    app.get("/my-cart/:email/:id", async(req, res) => {
+      const email = req.params.email;
+      const id = req.params.id;
+
+      const query = {"userInfo.email": email , productId: id}
+
+      const result = await cartCollection.findOne(query)
+      res.send(result)
+    })
+
     // get cart item data related api
 
     app.get("/my-order/:email", verifyToken, async (req, res) => {
-      const email = req.params.email;
+      try {
+        const email = req.params.email;
 
-      const result = await cartCollection
-        .aggregate([
-          {
-            $match: { "userInfo.email": email },
-          },
-          {
-            $addFields: {
-              productIdObjectId: { $toObjectId: "$productId" },
+        const result = await cartCollection
+          .aggregate([
+            {
+              $match: { "userInfo.email": email },
             },
-          },
-          {
-            $lookup: {
-              from: "phones",
-              localField: "productIdObjectId",
-              foreignField: "_id",
-              as: "productDetails",
-            },
-          },
-          {
-            $addFields: {
-              orderDetails: {
-                $first: "$productDetails",
+            {
+              $addFields: {
+                productIdObjectId: { $toObjectId: "$productId" }, // Ensure your MongoDB version supports $toObjectId
               },
             },
-          },
-          {
-            $project: {
-              productDetails: 0,
-              productIdObjectId: 0,
+            {
+              $lookup: {
+                from: "phones",
+                localField: "productIdObjectId",
+                foreignField: "_id",
+                as: "productDetails",
+              },
             },
-          },
-        ])
-        .toArray();
-      res.send(result);
+            {
+              $addFields: {
+                orderDetails: {
+                  $first: "$productDetails",
+                },
+              },
+            },
+            {
+              $project: {
+                productDetails: 0,
+                productIdObjectId: 0,
+              },
+            },
+          ])
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching order details:", error);
+        res
+          .status(500)
+          .send({ message: "An error occurred while fetching order details." });
+      }
     });
 
     // delete item from my-cart
