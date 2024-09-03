@@ -191,15 +191,32 @@ async function run() {
 
     // verify product is stored in database or not
 
-    app.get("/my-cart/:email/:id", async(req, res) => {
+    app.get("/my-cart/:email/:id", verifyToken, async (req, res) => {
       const email = req.params.email;
       const id = req.params.id;
 
-      const query = {"userInfo.email": email , productId: id}
+      const query = { "userInfo.email": email, productId: id };
 
-      const result = await cartCollection.findOne(query)
+      const result = await cartCollection.findOne(query);
+      res.send(result);
+    });
+
+    // update existing product quantity
+
+    app.put("/my-cart/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const { quantity } = req.body;
+      const filter = { _id: new ObjectId(id) };
+
+      const updateDoc = {
+        $set: {
+          quantity: quantity,
+        },
+      };
+
+      const result = await cartCollection.updateOne(filter, updateDoc);
       res.send(result)
-    })
+    });
 
     // get cart item data related api
 
