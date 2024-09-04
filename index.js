@@ -267,6 +267,17 @@ async function run() {
       }
     });
 
+    app.get("/my-order-count/:email", async (req, res) => {
+
+        const email = req.params.email;
+
+        const filter = {'userInfo.email': email}
+
+        const result = await cartCollection.find(filter).toArray()
+        res.send(result)
+
+    });
+
     // delete item from my-cart
 
     app.delete(
