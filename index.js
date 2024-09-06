@@ -5,6 +5,7 @@ const { MongoClient, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.Stripe_Secrete_Key);
 const cookieParser = require("cookie-parser");
 
 app.use(
@@ -215,14 +216,14 @@ async function run() {
       };
 
       const result = await cartCollection.updateOne(filter, updateDoc);
-      res.send(result)
+      res.send(result);
     });
 
     // get cart item data related api
 
-    app.get("/my-order/:email", verifyToken, async (req, res) => {
+    app.get("/my-order", verifyToken, async (req, res) => {
       try {
-        const email = req.params.email;
+        const email = req.query.email;
 
         const result = await cartCollection
           .aggregate([
@@ -267,15 +268,13 @@ async function run() {
       }
     });
 
-    app.get("/my-order-count/:email", async (req, res) => {
+    app.get("/my-order-count", async (req, res) => {
+      const email = req.query.email;
 
-        const email = req.params.email;
+      const filter = { "userInfo.email": email };
 
-        const filter = {'userInfo.email': email}
-
-        const result = await cartCollection.find(filter).toArray()
-        res.send(result)
-
+      const result = await cartCollection.find(filter).toArray();
+      res.send(result);
     });
 
     // delete item from my-cart
@@ -291,6 +290,27 @@ async function run() {
         res.send(result);
       }
     );
+
+    // payment related api
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+
+      const orderAmount = parseInt(price * 0.00837 * 100);
+
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: orderAmount,
+        currency: "usd",
+        payment_method_types: ["card"]
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+        // [DEV]: For demo purposes only, you should avoid exposing the PaymentIntent ID in the client-side code.
+        dpmCheckerLink: `https://dashboard.stripe.com/settings/payment_methods/review?transaction_id=${paymentIntent.id}`,
+      });
+    });
 
     // check user role
 
