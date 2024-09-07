@@ -313,6 +313,32 @@ async function run() {
       });
     });
 
+    // get data for admin dashboard stats
+
+    app.get("/admin-stats", async(req, res) =>{
+      const totalUser = await usersCollection.estimatedDocumentCount()
+      const totalProduct = await phoneCollection.estimatedDocumentCount()
+      const totalOrder = await paymentCollection.estimatedDocumentCount()
+      const revenueResult = await paymentCollection.aggregate([
+        {
+          $group:{
+            _id: null,
+            totalRevenue: {$sum: "$price"}
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            totalRevenue: 1
+          }
+        }
+      ]).toArray()
+
+      const revenue = revenueResult.length > 0? revenueResult[0].totalRevenue : 0
+
+      res.send({totalUser,totalProduct, totalOrder, revenue})
+    })
+
     // save info after payment in database
 
     app.post("/payments", async (req, res) => {
