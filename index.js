@@ -30,6 +30,7 @@ async function run() {
     const usersCollection = client.db("astraGadgets").collection("users");
     const phoneCollection = client.db("astraGadgets").collection("phones");
     const cartCollection = client.db("astraGadgets").collection("carts");
+    const paymentCollection = client.db("astraGadgets").collection("payments");
 
     const verifyToken = async (req, res, next) => {
       const token = req.cookies?.token;
@@ -302,7 +303,7 @@ async function run() {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: orderAmount,
         currency: "usd",
-        payment_method_types: ["card"]
+        payment_method_types: ["card"],
       });
 
       res.send({
@@ -310,6 +311,25 @@ async function run() {
         // [DEV]: For demo purposes only, you should avoid exposing the PaymentIntent ID in the client-side code.
         dpmCheckerLink: `https://dashboard.stripe.com/settings/payment_methods/review?transaction_id=${paymentIntent.id}`,
       });
+    });
+
+    // save info after payment in database
+
+    app.post("/payments", async (req, res) => {
+      const product = req.body;
+      console.log(product)
+
+      const postResult = await paymentCollection.insertOne(product);
+
+      const query = {
+        _id: {
+          $in: product.cartIds.map((id) => new ObjectId(id)),
+        },
+      };
+
+      const deleteResult = await cartCollection.deleteMany(query);
+
+      res.send({ postResult, deleteResult });
     });
 
     // check user role
