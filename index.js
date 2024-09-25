@@ -3,7 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ObjectId } = require("mongodb");
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.Stripe_Secrete_Key);
 const cookieParser = require("cookie-parser");
@@ -11,11 +11,10 @@ const cookieParser = require("cookie-parser");
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
+      // "http://localhost:5173",
+      // "http://localhost:5174",
       "https://astra-gadgets.netlify.app",
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
 );
